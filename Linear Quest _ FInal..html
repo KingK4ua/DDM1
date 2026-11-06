@@ -1,0 +1,2667 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Linear Quest</title>
+<meta name="theme-color" content="#07030f">
+<style>
+/* ========== VARIÁVEIS ========== */
+:root {
+    --bg-dark: #07030f;
+    --bg-sidebar: rgba(13, 8, 32, 0.72);
+    --bg-panel: rgba(26, 20, 56, 0.55);
+    --bg-card: rgba(40, 32, 80, 0.55);
+    --bg-card-hover: rgba(55, 45, 110, 0.7);
+    --bg-input: rgba(10, 6, 26, 0.8);
+
+    --text-main: #f5f3ff;
+    --text-muted: #a9a4c9;
+
+    --accent-primary: #00f5ff;
+    --accent-secondary: #ff2ecc;
+    --accent-tertiary: #00ffa3;
+    --accent-gold: #ffd93d;
+    --accent-red: #ff4d6d;
+    --accent-purple: #8b5cf6;
+
+    --gradient-main: linear-gradient(135deg, #00f5ff 0%, #8b5cf6 50%, #ff2ecc 100%);
+    --gradient-success: linear-gradient(135deg, #00ffa3 0%, #00f5ff 100%);
+    --gradient-danger: linear-gradient(135deg, #ff4d6d 0%, #ff2ecc 100%);
+    --gradient-gold: linear-gradient(135deg, #ffd93d 0%, #ff9f1c 100%);
+
+    --font-family: 'Segoe UI', system-ui, Roboto, Helvetica, Arial, sans-serif;
+    --sidebar-width: 250px;
+
+    --glow-cyan: 0 0 20px rgba(0, 245, 255, 0.5);
+    --glow-pink: 0 0 24px rgba(255, 46, 204, 0.45);
+    --glow-green: 0 0 24px rgba(0, 255, 163, 0.4);
+}
+
+/* ========== RESET ========== */
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: var(--font-family); }
+button, input { font-family: inherit; }
+html { height: 100%; }
+
+:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 3px; border-radius: 4px; }
+
+body {
+    background: var(--bg-dark);
+    color: var(--text-main);
+    min-height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    max-width: 100%;
+    position: relative;
+}
+
+/* ========== BACKGROUND ANIMADO ========== */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+        radial-gradient(circle at 15% 25%, rgba(139, 92, 246, 0.22) 0%, transparent 45%),
+        radial-gradient(circle at 85% 75%, rgba(0, 245, 255, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(255, 46, 204, 0.10) 0%, transparent 55%);
+    animation: bgPulse 18s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+        linear-gradient(rgba(139, 92, 246, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(139, 92, 246, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+    mask-image: radial-gradient(circle at 50% 40%, black, transparent 85%);
+}
+
+@keyframes bgPulse {
+    0%, 100% { opacity: 0.85; transform: scale(1) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1.15) rotate(3deg); }
+}
+
+/* Orbs Flutuantes */
+.orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.35;
+    pointer-events: none;
+    z-index: 0;
+    animation: floatOrb 24s ease-in-out infinite;
+}
+.orb-1 { width: 400px; height: 400px; background: #8b5cf6; top: -100px; left: -100px; animation-delay: 0s; }
+.orb-2 { width: 350px; height: 350px; background: #00f5ff; bottom: -80px; right: -80px; animation-delay: -8s; }
+.orb-3 { width: 300px; height: 300px; background: #ff2ecc; top: 45%; right: 25%; animation-delay: -16s; opacity: 0.2; }
+
+@keyframes floatOrb {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(60px, -40px) scale(1.1); }
+    66% { transform: translate(-40px, 50px) scale(0.95); }
+}
+
+/* ========== LAYOUT ========== */
+.app-container {
+    display: flex;
+    width: 100%;
+    height: 100dvh;
+    position: relative;
+    z-index: 1;
+}
+
+/* ========== SIDEBAR ========== */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg-sidebar);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-right: 1px solid rgba(139, 92, 246, 0.15);
+    display: flex;
+    flex-direction: column;
+    padding: 32px 18px;
+    z-index: 10;
+    flex-shrink: 0;
+}
+
+.logo {
+    font-size: 22px;
+    font-weight: 900;
+    margin-bottom: 44px;
+    text-align: center;
+    letter-spacing: 0.5px;
+    background: var(--gradient-main);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 6s ease infinite;
+    position: relative;
+}
+.logo::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 40px;
+    height: 2px;
+    background: var(--gradient-main);
+    border-radius: 2px;
+    animation: gradientShift 6s ease infinite;
+    background-size: 200% 200%;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.nav-menu { display: flex; flex-direction: column; gap: 8px; }
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 18px;
+    border-radius: 14px;
+    color: var(--text-muted);
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid transparent;
+    text-align: left;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: var(--gradient-main);
+    opacity: 0;
+    transition: opacity 0.3s;
+    z-index: -1;
+}
+
+.nav-item:hover {
+    color: var(--text-main);
+    background: rgba(139, 92, 246, 0.1);
+    border-color: rgba(139, 92, 246, 0.25);
+    transform: translateX(4px);
+}
+
+.nav-item:hover .nav-icon { transform: scale(1.15) rotate(-6deg); }
+
+.nav-item.active {
+    color: var(--accent-primary);
+    background: linear-gradient(135deg, rgba(0, 245, 255, 0.12), rgba(139, 92, 246, 0.12));
+    border-color: rgba(0, 245, 255, 0.3);
+    box-shadow: inset 0 0 20px rgba(0, 245, 255, 0.08), 0 0 24px rgba(0, 245, 255, 0.1);
+}
+
+.nav-item.active::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 20%; bottom: 20%;
+    width: 3px;
+    background: var(--gradient-success);
+    border-radius: 0 3px 3px 0;
+    box-shadow: 0 0 10px var(--accent-primary);
+    animation: navPulse 2s ease-in-out infinite;
+}
+
+@keyframes navPulse {
+    0%, 100% { opacity: 1; transform: scaleY(1); }
+    50% { opacity: 0.6; transform: scaleY(0.7); }
+}
+
+.nav-icon {
+    font-size: 20px;
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: inline-block;
+}
+
+/* ========== MAIN ========== */
+.main-content {
+    flex: 1;
+    position: relative;
+    overflow-y: auto;
+    padding: 44px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--accent-purple) transparent;
+}
+.main-content::-webkit-scrollbar { width: 8px; }
+.main-content::-webkit-scrollbar-thumb {
+    background: var(--gradient-main);
+    border-radius: 10px;
+}
+
+/* ========== VIEWS ========== */
+.view { display: none; min-height: 100%; max-width: 1200px; margin: 0 auto; }
+.view.active { display: flex; flex-direction: column; animation: viewIn 0.5s cubic-bezier(0.16, 1, 0.3, 1); }
+
+@keyframes viewIn {
+    from { opacity: 0; transform: translateY(24px) scale(0.98); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ========== TOP BAR ========== */
+.top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 36px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.15);
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+h1 {
+    font-size: clamp(24px, 5vw, 38px);
+    font-weight: 800;
+    margin-bottom: 6px;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, #fff 0%, #a9a4c9 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+h1:focus { outline: none; }
+h2 { font-size: clamp(18px, 3.5vw, 22px); font-weight: 700; margin-bottom: 18px; }
+.subtitle { color: var(--text-muted); font-size: 15px; }
+
+.xp-badge {
+    background: var(--bg-panel);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 245, 255, 0.25);
+    padding: 10px 22px;
+    border-radius: 30px;
+    font-weight: 700;
+    font-size: 15px;
+    white-space: nowrap;
+    box-shadow: inset 0 0 20px rgba(0, 245, 255, 0.06);
+}
+.xp-badge span { color: var(--accent-gold); font-weight: 800; }
+
+/* ========== HOME & DASHBOARD ========== */
+.dashboard-grid { display: grid; grid-template-columns: 1fr 2fr; gap: 32px; }
+
+.progress-card {
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border-radius: 22px;
+    padding: 28px;
+    border: 1px solid rgba(139, 92, 246, 0.18);
+    height: fit-content;
+    position: relative;
+    overflow: hidden;
+}
+.progress-card::before {
+    content: '';
+    position: absolute;
+    top: -50%; right: -50%;
+    width: 200%; height: 200%;
+    background: conic-gradient(from 0deg, transparent 0deg, rgba(0, 245, 255, 0.06) 60deg, transparent 120deg);
+    animation: conicRotate 12s linear infinite;
+    pointer-events: none;
+}
+@keyframes conicRotate { to { transform: rotate(360deg); } }
+
+.progress-card > * { position: relative; z-index: 1; }
+
+.progress-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-size: 15px;
+    font-weight: 600;
+}
+.progress-header span:last-child { color: var(--accent-gold); }
+
+.progress-bar-bg {
+    height: 14px;
+    background: rgba(10, 6, 26, 0.8);
+    border-radius: 20px;
+    overflow: hidden;
+    margin-bottom: 16px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    position: relative;
+}
+
+.progress-bar-fill {
+    height: 100%;
+    background: var(--gradient-main);
+    background-size: 200% 100%;
+    border-radius: 20px;
+    transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.6);
+    position: relative;
+    overflow: hidden;
+    animation: shimmerBar 3s ease-in-out infinite;
+}
+.progress-bar-fill::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shimmerSweep 2s infinite;
+}
+@keyframes shimmerBar { 0%,100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } }
+@keyframes shimmerSweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+
+.survival-banner {
+    background: linear-gradient(135deg, rgba(255, 46, 204, 0.15), rgba(139, 92, 246, 0.2));
+    border: 1px solid rgba(255, 46, 204, 0.35);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    box-shadow: 0 10px 30px rgba(255, 46, 204, 0.1);
+}
+.survival-info h3 { font-size: 18px; color: var(--accent-secondary); margin-bottom: 4px; }
+.survival-info p { font-size: 13px; color: var(--text-muted); }
+
+.levels-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+
+.level-card {
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border-radius: 20px;
+    padding: 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+    animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@keyframes cardIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.level-card::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    background: var(--gradient-main);
+    border-radius: 20px;
+    opacity: 0;
+    z-index: -1;
+    transition: opacity 0.4s;
+    filter: blur(20px);
+}
+.level-card:hover:not(.locked)::before { opacity: 0.35; }
+
+.level-card:hover:not(.locked) {
+    transform: translateY(-6px) scale(1.02);
+    border-color: rgba(0, 245, 255, 0.4);
+    background: var(--bg-card-hover);
+}
+.level-card.locked { opacity: 0.35; cursor: not-allowed; }
+.level-card.completed { border-color: rgba(0, 255, 163, 0.4); box-shadow: 0 0 30px rgba(0, 255, 163, 0.1); }
+
+.level-icon {
+    width: 56px; height: 56px;
+    border-radius: 16px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 22px; font-weight: 800;
+    flex-shrink: 0;
+    position: relative;
+    transition: transform 0.3s;
+}
+.level-card:hover .level-icon { transform: rotate(-8deg) scale(1.1); }
+
+.level-icon.active,
+.level-icon.completed {
+    background: var(--gradient-success);
+    color: #001a10;
+    box-shadow: var(--glow-green);
+}
+.level-icon.inactive { background: rgba(139, 92, 246, 0.15); color: var(--text-main); }
+
+.level-info { flex: 1; min-width: 0; }
+.level-info h3 { font-size: 16px; margin-bottom: 3px; }
+.level-info p { font-size: 13px; color: var(--text-muted); }
+
+.level-actions { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+
+.level-xp {
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--accent-gold);
+    background: rgba(255, 217, 61, 0.1);
+    padding: 6px 12px;
+    border-radius: 12px;
+    white-space: nowrap;
+    border: 1px solid rgba(255, 217, 61, 0.2);
+}
+
+.completed-label { color: var(--accent-tertiary); font-size: 12px; font-weight: 700; }
+
+.btn-practice {
+    background: transparent;
+    color: var(--accent-primary);
+    border: 1px solid var(--accent-primary);
+    border-radius: 10px;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-practice:hover { background: rgba(0, 245, 255, 0.1); box-shadow: 0 0 12px rgba(0, 245, 255, 0.3); }
+
+/* ========== DESAFIOS & LOJA ========== */
+.challenges-grid, .shop-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 22px;
+}
+
+.challenge-card, .shop-card {
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(139, 92, 246, 0.18);
+    border-radius: 20px;
+    padding: 26px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+.challenge-card:hover, .shop-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(0, 245, 255, 0.35);
+    box-shadow: 0 15px 40px rgba(0, 245, 255, 0.12);
+}
+
+.challenge-header { display: flex; align-items: center; gap: 14px; }
+.challenge-icon, .shop-icon {
+    font-size: 30px;
+    background: rgba(139, 92, 246, 0.15);
+    padding: 12px;
+    border-radius: 16px;
+    border: 1px solid rgba(139, 92, 246, 0.25);
+}
+.shop-card { text-align: center; }
+.shop-card.owned { opacity: 0.55; }
+
+.challenge-reward { color: var(--accent-gold); font-weight: 700; font-size: 13px; }
+.shop-cost { color: var(--accent-gold); font-weight: 800; font-size: 15px; }
+
+.btn-claim {
+    background: var(--gradient-gold);
+    background-size: 200% 200%;
+    color: #1a0f00;
+    border: none;
+    border-radius: 14px;
+    padding: 12px;
+    font-size: 15px;
+    font-weight: 800;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 6px 20px rgba(255, 217, 61, 0.3);
+    animation: gradientShift 3s ease infinite;
+}
+.btn-claim:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 10px 25px rgba(255, 217, 61, 0.5); }
+.btn-claim:disabled {
+    background: rgba(255,255,255,0.08);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    box-shadow: none;
+    animation: none;
+}
+
+/* ========== PERFIL ========== */
+.profile-layout { display: grid; grid-template-columns: 320px 1fr; gap: 32px; }
+
+.profile-card-main {
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 22px;
+    padding: 28px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: fit-content;
+}
+
+.profile-avatar {
+    width: 110px; height: 110px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(0, 245, 255, 0.15), rgba(255, 46, 204, 0.15));
+    border: 2px solid transparent;
+    position: relative;
+    display: flex; justify-content: center; align-items: center;
+    font-size: 46px;
+    margin-bottom: 18px;
+    box-shadow: 0 0 30px rgba(0, 245, 255, 0.3);
+}
+.profile-avatar::before {
+    content: '';
+    position: absolute;
+    inset: -3px;
+    border-radius: 50%;
+    background: var(--gradient-main);
+    z-index: -1;
+    animation: gradientShift 4s ease infinite;
+    background-size: 200% 200%;
+}
+
+.profile-name-edit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    margin-bottom: 6px;
+}
+.profile-name-input {
+    width: 100%;
+    background: rgba(10, 6, 26, 0.6);
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    border-radius: 12px;
+    padding: 8px 12px;
+    color: var(--text-main);
+    font-size: 18px;
+    font-weight: 800;
+    text-align: center;
+    transition: all 0.3s;
+}
+.profile-name-input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 15px rgba(0, 245, 255, 0.3);
+    outline: none;
+}
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; margin-bottom: 24px; }
+
+.stat-box {
+    background: var(--bg-panel);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    border-radius: 16px;
+    padding: 18px;
+    text-align: center;
+    transition: all 0.3s;
+}
+.stat-box:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 245, 255, 0.3);
+    box-shadow: 0 8px 24px rgba(0, 245, 255, 0.08);
+}
+
+.stat-value {
+    font-size: 26px;
+    font-weight: 900;
+    background: var(--gradient-main);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-top: 4px;
+    animation: gradientShift 5s ease infinite;
+}
+
+/* Painel de Cores Estilo Treino de Mira */
+.theme-customizer-card {
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 20px;
+    padding: 24px;
+    margin-top: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.theme-customizer-card h3 {
+    font-size: 16px;
+    color: var(--accent-primary);
+    border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+    padding-bottom: 8px;
+}
+.theme-presets-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+.theme-preset-btn {
+    background: var(--bg-card);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-left: 4px solid var(--preset-color, var(--accent-primary));
+    color: var(--text-main);
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: 13px;
+    text-align: left;
+    transition: all 0.2s;
+}
+.theme-preset-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-primary);
+    transform: translateY(-2px);
+}
+.color-picker-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-input);
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(139, 92, 246, 0.2);
+}
+.color-picker-row input[type="color"] {
+    background: transparent;
+    border: none;
+    width: 36px;
+    height: 30px;
+    cursor: pointer;
+}
+
+/* ========== GAME INFO ========== */
+.game-info-row { display: flex; justify-content: space-between; gap: 10px; margin-top: 22px; flex-wrap: wrap; }
+
+.info-pill {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.22);
+    border-radius: 20px;
+    padding: 8px 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+    transition: all 0.3s;
+}
+.info-pill:hover { border-color: rgba(0, 245, 255, 0.4); color: var(--text-main); }
+.info-pill strong { color: var(--text-main); font-weight: 800; }
+
+.margin-top-10 { margin-top: 10px; }
+.margin-top-18 { margin-top: 18px; }
+.margin-top-15 { margin-top: 15px; }
+.full-width { width: 100%; }
+
+/* ========== FASE 1 & SOBREVIVÊNCIA (CALCULADORA) ========== */
+.calc-wrapper {
+    max-width: 460px;
+    margin: 0 auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.phase-top {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 18px;
+    gap: 10px;
+}
+
+.btn-exit {
+    background: rgba(139, 92, 246, 0.1);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    color: var(--text-muted);
+    padding: 8px 14px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-exit:hover { color: var(--text-main); background: rgba(139, 92, 246, 0.2); }
+
+.calc-top-info { width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.calc-level-tag {
+    font-size: 18px; font-weight: 900;
+    background: var(--gradient-main);
+    background-size: 200% 200%;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 5s ease infinite;
+}
+.calc-subtext { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+.calc-xp-top { text-align: right; font-weight: 800; font-size: 20px; color: var(--accent-gold); }
+.calc-xp-top span:last-child { font-size: 11px; color: var(--text-muted); display: block; letter-spacing: 1px; }
+
+.step-dots { display: flex; gap: 6px; width: 100%; margin-bottom: 14px; }
+.step-dot {
+    flex: 1;
+    height: 6px;
+    background: rgba(139, 92, 246, 0.15);
+    border-radius: 4px;
+    transition: all 0.4s;
+}
+.step-dot.active { background: var(--accent-primary); box-shadow: 0 0 12px var(--accent-primary); }
+.step-dot.completed { background: var(--accent-tertiary); box-shadow: 0 0 8px var(--accent-tertiary); }
+
+.calc-expression {
+    font-size: clamp(28px, 8vw, 52px);
+    font-weight: 900;
+    text-align: center;
+    margin: 16px 0 12px;
+    letter-spacing: 1px;
+    background: linear-gradient(135deg, #fff, #a9a4c9);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 0 40px rgba(0, 245, 255, 0.3);
+    word-break: break-word;
+}
+
+.chapter-pill {
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 22px;
+    font-weight: 600;
+    letter-spacing: 1px;
+}
+
+.hearts { color: var(--accent-red); letter-spacing: 2px; font-size: 22px; filter: drop-shadow(0 0 6px rgba(255, 77, 109, 0.6)); }
+
+.calc-display {
+    width: 100%;
+    background: var(--bg-input);
+    border: 2px solid rgba(0, 245, 255, 0.2);
+    border-radius: 18px;
+    height: 68px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 34px; font-weight: 900;
+    color: var(--text-main);
+    margin-bottom: 18px;
+    box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.6), 0 0 30px rgba(0, 245, 255, 0.08);
+    transition: border-color 0.3s;
+}
+.calc-display:not(:empty) { border-color: var(--accent-primary); }
+
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin-bottom: 18px; }
+
+.num-btn {
+    background: var(--bg-card);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 16px;
+    height: 58px;
+    font-size: 23px;
+    font-weight: 800;
+    color: var(--text-main);
+    cursor: pointer;
+    transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+    display: flex; align-items: center; justify-content: center;
+}
+.num-btn:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+    transform: translateY(-2px) scale(1.03);
+}
+.num-btn:active { transform: scale(0.94); }
+.num-btn.minus { background: rgba(0, 245, 255, 0.1); color: var(--accent-primary); border-color: rgba(0, 245, 255, 0.3); }
+.num-btn.delete { background: rgba(255, 77, 109, 0.1); color: var(--accent-red); border-color: rgba(255, 77, 109, 0.3); }
+.num-btn.hint { background: rgba(255, 217, 61, 0.12); color: var(--accent-gold); border-color: rgba(255, 217, 61, 0.3); font-size: 20px; }
+
+/* ========== BOTÕES ========== */
+.btn-go {
+    background: var(--gradient-success);
+    background-size: 200% 200%;
+    color: #001a10;
+    border: none;
+    border-radius: 18px;
+    height: 60px;
+    width: 100%;
+    font-size: 22px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 0.25s;
+    box-shadow: 0 8px 30px rgba(0, 255, 163, 0.4);
+    letter-spacing: 2px;
+    animation: gradientShift 4s ease infinite;
+}
+.btn-go:hover { transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0, 255, 163, 0.6); }
+
+.btn-primary {
+    background: var(--gradient-success);
+    background-size: 200% 200%;
+    color: #001a10;
+    border: none;
+    border-radius: 16px;
+    padding: 18px;
+    font-size: 18px;
+    font-weight: 800;
+    width: 100%;
+    cursor: pointer;
+    transition: all 0.25s;
+    box-shadow: 0 8px 25px rgba(0, 255, 163, 0.3);
+    animation: gradientShift 4s ease infinite;
+    letter-spacing: 0.5px;
+}
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 12px 35px rgba(0, 255, 163, 0.5); }
+
+.btn-secondary {
+    background: rgba(139, 92, 246, 0.12);
+    color: var(--text-main);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.btn-secondary:hover { background: rgba(139, 92, 246, 0.22); border-color: rgba(0, 245, 255, 0.4); }
+
+.btn-danger {
+    background: var(--gradient-danger);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 4px 18px rgba(255, 77, 109, 0.35);
+    transition: all 0.2s;
+}
+.btn-danger:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(255, 77, 109, 0.5); }
+
+/* ========== FEEDBACK ========== */
+.feedback {
+    width: 100%;
+    padding: 14px 18px;
+    border-radius: 14px;
+    margin-bottom: 14px;
+    font-weight: 700;
+    text-align: center;
+    display: none;
+    animation: feedbackIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.feedback.show { display: block; }
+.feedback.success {
+    background: linear-gradient(135deg, rgba(0, 255, 163, 0.15), rgba(0, 245, 255, 0.15));
+    color: var(--accent-tertiary);
+    border: 1px solid rgba(0, 255, 163, 0.35);
+    box-shadow: 0 0 25px rgba(0, 255, 163, 0.15);
+}
+.feedback.error {
+    background: linear-gradient(135deg, rgba(255, 77, 109, 0.15), rgba(255, 46, 204, 0.15));
+    color: #ff8ba0;
+    border: 1px solid rgba(255, 77, 109, 0.35);
+    box-shadow: 0 0 25px rgba(255, 77, 109, 0.15);
+}
+@keyframes feedbackIn {
+    from { opacity: 0; transform: scale(0.9) translateY(-5px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ========== FASE 2 DINÂMICA (CRUZADINHA) ========== */
+.quiz-wrapper { max-width: 780px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; }
+.quiz-header { display: flex; justify-content: space-between; margin-bottom: 24px; align-items: flex-start; gap: 15px; }
+
+.crossword-board {
+    display: grid;
+    gap: 8px;
+    justify-content: center;
+    margin: 24px auto;
+    max-width: 100%;
+}
+
+.crossword-cell {
+    width: min(58px, 14vw); height: min(58px, 14vw);
+    background: var(--bg-card);
+    border: 2px solid rgba(139, 92, 246, 0.2);
+    border-radius: 12px;
+    display: flex; justify-content: center; align-items: center;
+    font-size: clamp(14px, 4vw, 22px);
+    font-weight: 800;
+    color: var(--text-main);
+    transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.crossword-cell.correct {
+    border-color: var(--accent-tertiary);
+    background: rgba(0, 255, 163, 0.15);
+    box-shadow: 0 0 20px rgba(0, 255, 163, 0.4);
+    animation: pulse 0.5s ease;
+}
+.crossword-cell.wrong {
+    border-color: var(--accent-red);
+    background: rgba(255, 77, 109, 0.15);
+    box-shadow: 0 0 20px rgba(255, 77, 109, 0.3);
+    animation: shake 0.4s ease;
+}
+.crossword-cell.empty { background: transparent; border-color: transparent; }
+.crossword-cell input {
+    width: 100%; height: 100%;
+    background: transparent;
+    border: none;
+    text-align: center;
+    font-size: clamp(14px, 4vw, 22px);
+    font-weight: 800;
+    color: var(--accent-primary);
+    outline: none;
+}
+.crossword-cell input:focus { background: rgba(0, 245, 255, 0.12); border-radius: 10px; }
+.crossword-cell.static { background: rgba(139, 92, 246, 0.12); color: var(--text-muted); }
+
+/* ========== FASE 3/4/5 (QUIZ) ========== */
+.question-box {
+    background: var(--bg-panel);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(0, 245, 255, 0.25);
+    border-radius: 22px;
+    padding: 32px;
+    text-align: center;
+    margin-bottom: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 0 40px rgba(0, 245, 255, 0.03);
+    position: relative;
+    overflow: hidden;
+}
+.question-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--gradient-main);
+    background-size: 200% 100%;
+    animation: gradientShift 4s ease infinite;
+}
+
+.equation-container {
+    display: inline-block;
+    padding: 12px 24px;
+    border-left: 3px solid var(--accent-primary);
+    border-radius: 4px;
+    text-align: left;
+    margin-bottom: 20px;
+    font-size: clamp(18px, 4.5vw, 30px);
+    font-weight: 800;
+    line-height: 1.5;
+    background: rgba(0, 245, 255, 0.04);
+    box-shadow: -3px 0 20px rgba(0, 245, 255, 0.3);
+    white-space: pre-line;
+}
+
+.options-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.option-btn {
+    background: var(--bg-card);
+    border: 2px solid transparent;
+    border-radius: 16px;
+    padding: 20px;
+    color: var(--text-main);
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.option-btn:hover:not(.eliminated) { background: var(--bg-card-hover); transform: scale(1.02); border-color: rgba(139, 92, 246, 0.4); }
+.option-btn.selected {
+    border-color: var(--accent-primary);
+    background: rgba(0, 245, 255, 0.1);
+    box-shadow: 0 0 30px rgba(0, 245, 255, 0.35);
+    transform: scale(1.03);
+}
+.option-btn.eliminated { opacity: 0.2; cursor: not-allowed; text-decoration: line-through; }
+
+/* ========== SUCESSO ========== */
+#view-success { justify-content: center; align-items: center; text-align: center; }
+
+.success-graphic {
+    position: relative;
+    width: min(300px, 80vw);
+    height: min(150px, 40vw);
+    margin-bottom: 44px;
+}
+.circle {
+    position: absolute;
+    border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 40px;
+}
+.circle.main {
+    width: 50%; height: 100%;
+    background: var(--gradient-gold);
+    background-size: 200% 200%;
+    color: #1a0f00;
+    left: 25%; z-index: 3;
+    box-shadow: 0 0 60px rgba(255, 217, 61, 0.7);
+    border: 5px solid #fff;
+    font-size: clamp(24px, 8vw, 40px);
+    animation: gradientShift 3s ease infinite, pulse 2s ease-in-out infinite;
+}
+.circle.left {
+    width: 33.33%; height: 66.66%;
+    background: var(--gradient-main);
+    background-size: 200% 200%;
+    color: #fff;
+    left: 3%; z-index: 2;
+    font-size: clamp(20px, 6vw, 40px);
+    animation: gradientShift 4s ease infinite;
+}
+.circle.right {
+    width: 33.33%; height: 66.66%;
+    background: var(--gradient-success);
+    background-size: 200% 200%;
+    color: #001a10;
+    right: 3%; z-index: 1;
+    font-size: clamp(20px, 6vw, 40px);
+    animation: gradientShift 5s ease infinite;
+}
+
+.success-title {
+    background: var(--gradient-gold);
+    background-size: 200% 200%;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: clamp(26px, 7vw, 46px);
+    font-weight: 900;
+    margin-bottom: 12px;
+    line-height: 1.2;
+    animation: gradientShift 3s ease infinite;
+    letter-spacing: 1px;
+}
+
+.xp-gained {
+    font-size: clamp(38px, 11vw, 62px);
+    font-weight: 900;
+    background: var(--gradient-success);
+    background-size: 200% 200%;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 22px;
+    filter: drop-shadow(0 0 30px rgba(0, 255, 163, 0.5));
+    animation: gradientShift 4s ease infinite;
+}
+
+.success-details { display: flex; justify-content: center; gap: 16px; flex-wrap: wrap; margin-bottom: 22px; }
+.success-stat {
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    padding: 12px 18px;
+    border-radius: 14px;
+    font-weight: 700;
+}
+
+.rewards-row {
+    display: flex; justify-content: space-between;
+    width: 100%; max-width: 480px;
+    font-weight: 800; font-size: 18px;
+    margin-bottom: 18px;
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--accent-primary);
+    border: 2px solid var(--accent-primary);
+    border-radius: 16px;
+    padding: 18px 38px;
+    font-size: 18px;
+    font-weight: 800;
+    cursor: pointer;
+    margin-top: 18px;
+    transition: all 0.3s;
+    letter-spacing: 1px;
+}
+.btn-outline:hover {
+    background: rgba(0, 245, 255, 0.1);
+    box-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
+    transform: translateY(-3px);
+}
+
+/* ========== TOAST ========== */
+#toast-container {
+    position: fixed;
+    top: 20px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex; flex-direction: column; gap: 10px;
+    pointer-events: none;
+    max-width: calc(100vw - 40px);
+}
+.toast {
+    background: var(--bg-panel);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 14px;
+    padding: 14px 22px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    animation: toastIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: auto;
+    max-width: 400px;
+    font-weight: 700;
+    font-size: 14px;
+}
+.toast.success { border-color: var(--accent-tertiary); color: var(--accent-tertiary); box-shadow: 0 12px 40px rgba(0,255,163,0.25); }
+.toast.error { border-color: var(--accent-red); color: #ff8ba0; box-shadow: 0 12px 40px rgba(255,77,109,0.25); }
+.toast.info { border-color: var(--accent-primary); color: var(--accent-primary); box-shadow: 0 12px 40px rgba(0,245,255,0.25); }
+
+@keyframes toastIn {
+    from { opacity: 0; transform: translateY(-20px) scale(0.9); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ========== MODAL ========== */
+.modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(7, 3, 15, 0.85);
+    display: none;
+    justify-content: center; align-items: center;
+    z-index: 10000;
+    padding: 20px;
+    backdrop-filter: blur(8px);
+}
+.modal-overlay.show { display: flex; }
+
+.modal-card {
+    background: var(--bg-panel);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 22px;
+    padding: 32px;
+    max-width: 420px;
+    width: 100%;
+    text-align: center;
+    animation: modalIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.7);
+}
+.modal-card h2 { margin-bottom: 12px; }
+.modal-card p { color: var(--text-muted); margin-bottom: 22px; }
+.modal-actions { display: flex; gap: 12px; justify-content: center; }
+.modal-actions button { flex: 1; }
+
+@keyframes modalIn {
+    from { opacity: 0; transform: scale(0.85); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+#levelup-overlay .modal-card {
+    background: linear-gradient(135deg, var(--bg-panel) 0%, var(--bg-card) 100%);
+    border: 2px solid var(--accent-gold);
+    box-shadow: 0 0 80px rgba(255, 217, 61, 0.4);
+}
+.levelup-emoji { font-size: 76px; margin-bottom: 8px; animation: bounce 1s ease infinite; }
+@keyframes bounce { 0%,100% { transform: translateY(0) rotate(0deg); } 50% { transform: translateY(-12px) rotate(8deg); } }
+.levelup-title {
+    background: var(--gradient-gold);
+    background-size: 200% 200%;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 34px; font-weight: 900;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    animation: gradientShift 3s ease infinite;
+}
+.levelup-level {
+    font-size: 68px; font-weight: 900;
+    background: var(--gradient-main);
+    background-size: 200% 200%;
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 0 30px rgba(0, 245, 255, 0.6));
+    animation: gradientShift 3s ease infinite;
+}
+
+/* ========== ANIMAÇÕES ========== */
+@keyframes shake {
+    0%,100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+@keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+}
+
+/* ========== PARTÍCULAS / CONFETTI ========== */
+.particle {
+    position: fixed;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    animation: particleFly 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+@keyframes particleFly {
+    0% { transform: translate(0, 0) scale(1); opacity: 1; }
+    100% { transform: translate(var(--dx), var(--dy)) scale(0); opacity: 0; }
+}
+
+.confetti {
+    position: fixed;
+    width: 10px; height: 14px;
+    top: -20px;
+    pointer-events: none;
+    z-index: 9997;
+    animation: confettiFall linear forwards;
+}
+@keyframes confettiFall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+}
+
+/* ========== RESPONSIVIDADE PREDITIVA ========== */
+@media (max-width: 1024px) {
+    .sidebar { width: 84px; padding: 26px 10px; }
+    .logo { font-size: 0; margin-bottom: 26px; }
+    .logo::before { content: '📐'; font-size: 26px; -webkit-text-fill-color: initial; }
+    .logo::after { display: none; }
+    .nav-item span:last-child { display: none; }
+    .nav-item { justify-content: center; padding: 12px; }
+    .main-content { padding: 28px; }
+    .dashboard-grid { grid-template-columns: 1fr; }
+    .profile-layout { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 760px) {
+    html, body { overflow-x: hidden; }
+    body { overflow-y: auto; height: auto; min-height: 100dvh; }
+    .app-container { flex-direction: column; min-height: 100dvh; }
+
+    .sidebar {
+        position: fixed;
+        left: 0; right: 0; bottom: 0; top: auto;
+        width: 100%; height: auto;
+        flex-direction: row;
+        padding: 8px 8px calc(8px + env(safe-area-inset-bottom));
+        border-right: none;
+        border-top: 1px solid rgba(139, 92, 246, 0.2);
+        z-index: 100;
+        box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+    }
+    .logo, .logo::before, .logo::after { display: none; }
+    .nav-menu { flex-direction: row; justify-content: space-around; width: 100%; gap: 4px; }
+    .nav-item {
+        flex-direction: column; gap: 3px; flex: 1;
+        padding: 8px 4px; border-radius: 12px;
+        font-size: 10px; text-align: center;
+        border-left: none;
+    }
+    .nav-item.active::after { display: none; }
+    .nav-item.active { border-color: rgba(0, 245, 255, 0.3); }
+    .nav-icon { font-size: 22px; }
+    .main-content { padding: 18px 14px calc(90px + env(safe-area-inset-bottom)); width: 100%; }
+    .top-bar { flex-direction: column; align-items: flex-start; gap: 10px; }
+    .xp-badge { font-size: 13px; padding: 8px 16px; }
+    .levels-list, .challenges-grid, .shop-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .level-card { padding: 16px; gap: 12px; flex-wrap: wrap; }
+    .level-icon { width: 46px; height: 46px; font-size: 18px; }
+    .challenge-card, .progress-card, .profile-card-main { padding: 20px; }
+    .question-box { padding: 22px 16px; }
+    .btn-outline { padding: 16px 24px; font-size: 16px; width: 100%; }
+    .orb { opacity: 0.2; }
+}
+
+@media (max-width: 380px) {
+    .main-content { padding: 12px 10px calc(88px + env(safe-area-inset-bottom)); }
+    .numpad { gap: 6px; }
+    .num-btn { height: 46px; font-size: 18px; border-radius: 12px; }
+    .calc-display { height: 50px; font-size: 24px; }
+    .calc-expression { font-size: 24px; }
+    .option-btn { padding: 14px; font-size: 14px; }
+    .crossword-cell { width: 11.5vw; height: 11.5vw; font-size: 12px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+
+<div id="toast-container" aria-live="polite"></div>
+
+<div class="app-container">
+
+    <aside class="sidebar">
+        <div class="logo">Linear Quest</div>
+        <nav class="nav-menu" aria-label="Menu principal">
+            <button class="nav-item active" id="nav-home" onclick="goHome()" aria-label="Início">
+                <span class="nav-icon" aria-hidden="true">🏠</span><span>Início</span>
+            </button>
+            <button class="nav-item" id="nav-challenges" onclick="openChallenges()" aria-label="Desafios">
+                <span class="nav-icon" aria-hidden="true">✨</span><span>Desafios</span>
+            </button>
+            <button class="nav-item" id="nav-shop" onclick="openShop()" aria-label="Loja">
+                <span class="nav-icon" aria-hidden="true">🛒</span><span>Loja</span>
+            </button>
+            <button class="nav-item" id="nav-profile" onclick="openProfile()" aria-label="Perfil">
+                <span class="nav-icon" aria-hidden="true">👤</span><span>Perfil</span>
+            </button>
+        </nav>
+    </aside>
+
+    <main class="main-content">
+
+        <!-- HOME -->
+        <div id="view-home" class="view active">
+            <div class="top-bar">
+                <div>
+                    <h1 tabindex="-1" id="home-title">Bem-vindo, <span id="home-player-name">Kauã</span>!</h1>
+                    <p class="subtitle">Pronto para dominar os sistemas de equações e álgebra de hoje?</p>
+                </div>
+                <div class="xp-badge">
+                    Nível <span id="home-level">1</span> • XP <span id="home-xp">0</span>/<span id="home-max-xp">500</span>
+                </div>
+            </div>
+
+            <div class="survival-banner">
+                <div class="survival-info">
+                    <h3>⚡ Modo Sobrevivência Infinito</h3>
+                    <p>Resolva o máximo de equações seguidas sem perder suas 3 vidas!</p>
+                </div>
+                <button class="btn-primary" onclick="startSurvivalMode()">Jogar Agora 🔥</button>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="progress-card">
+                    <h2>Seu Progresso</h2>
+                    <div class="progress-header">
+                        <span>Progresso do Nível</span>
+                        <span id="home-progress-text">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="home-progress-bar" style="width:0%;"></div>
+                    </div>
+                    <p class="subtitle margin-top-15" id="home-xp-left">Faltam 500 XP para o próximo nível</p>
+                    <div class="game-info-row">
+                        <div class="info-pill">🌕 <strong id="home-coins">0</strong></div>
+                        <div class="info-pill">🎯 <strong id="home-accuracy">—</strong></div>
+                        <div class="info-pill">🔥 <strong id="home-streak">0</strong></div>
+                    </div>
+                </div>
+                <div>
+                    <h2>Fases da Jornada</h2>
+                    <div class="levels-list" id="levels-container"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- DESAFIOS -->
+        <div id="view-challenges" class="view">
+            <div class="top-bar">
+                <div>
+                    <h1 tabindex="-1" id="challenges-title">Desafios & Conquistas</h1>
+                    <p class="subtitle">Conclua objetivos e desbloqueie recompensas!</p>
+                </div>
+            </div>
+            <div class="challenges-grid" id="challenges-container"></div>
+        </div>
+
+        <!-- LOJA -->
+        <div id="view-shop" class="view">
+            <div class="top-bar">
+                <div>
+                    <h1 tabindex="-1" id="shop-title">Loja Cyber</h1>
+                    <p class="subtitle">Gaste suas moedas em vantagens e cosméticos.</p>
+                </div>
+                <div class="xp-badge">🌕 <span id="shop-coins">0</span></div>
+            </div>
+            <div class="shop-grid" id="shop-container"></div>
+        </div>
+
+        <!-- PERFIL & SISTEMA DE CORES -->
+        <div id="view-profile" class="view">
+            <div class="top-bar">
+                <div>
+                    <h1 tabindex="-1" id="profile-title">Seu Perfil</h1>
+                    <p class="subtitle">Acompanhe suas estatísticas e customização visual</p>
+                </div>
+                <button class="btn-secondary" onclick="toggleSound()" id="btn-sound">🔊 Som: Ligado</button>
+            </div>
+            <div class="profile-layout">
+                <div class="profile-card-main">
+                    <div class="profile-avatar" aria-hidden="true">👨‍🎓</div>
+                    <div class="profile-name-edit">
+                        <input type="text" id="profile-name-input" class="profile-name-input" maxlength="20" placeholder="Seu Nome" aria-label="Nome do jogador">
+                    </div>
+                    <p class="subtitle">Estudante de Álgebra</p>
+                    <div class="info-pill margin-top-18">
+                        🔥 Sequência Atual: <strong id="profile-streak">0</strong>
+                    </div>
+                    <button class="btn-danger margin-top-18 full-width" onclick="resetProgress()">🗑️ Apagar progresso</button>
+                </div>
+                <div>
+                    <h2>Estatísticas Gerais</h2>
+                    <div class="stats-grid">
+                        <div class="stat-box"><p class="subtitle">Nível</p><div class="stat-value" id="profile-level">1</div></div>
+                        <div class="stat-box"><p class="subtitle">XP Total</p><div class="stat-value" id="profile-total-xp">0</div></div>
+                        <div class="stat-box"><p class="subtitle">Moedas</p><div class="stat-value" id="profile-coins">0</div></div>
+                        <div class="stat-box"><p class="subtitle">Fases</p><div class="stat-value" id="profile-completed-levels">0</div></div>
+                        <div class="stat-box"><p class="subtitle">Questões</p><div class="stat-value" id="profile-questions">0</div></div>
+                        <div class="stat-box"><p class="subtitle">Acertos</p><div class="stat-value" id="profile-correct">0</div></div>
+                        <div class="stat-box"><p class="subtitle">Erros</p><div class="stat-value" id="profile-wrong">0</div></div>
+                        <div class="stat-box"><p class="subtitle">Precisão</p><div class="stat-value" id="profile-accuracy">—</div></div>
+                        <div class="stat-box"><p class="subtitle">Melhor Seq.</p><div class="stat-value" id="profile-best-streak">0</div></div>
+                        <div class="stat-box"><p class="subtitle">Tempo</p><div class="stat-value" id="profile-time">0m</div></div>
+                    </div>
+
+                    <!-- SISTEMA DE CORES E TEMAS (Estilo Aim Trainer) -->
+                    <div class="theme-customizer-card">
+                        <h3>🎨 Personalização de Cores e Temas</h3>
+                        <p class="subtitle" style="font-size:12px;">Escolha um tema rápido ou personalize as cores da sua interface:</p>
+                        <div class="theme-presets-grid">
+                            <button class="theme-preset-btn" style="--preset-color: #00f5ff;" onclick="applyMathPreset('cyan')">Ciano Cyber</button>
+                            <button class="theme-preset-btn" style="--preset-color: #a855f7;" onclick="applyMathPreset('purple')">Roxo Místico</button>
+                            <button class="theme-preset-btn" style="--preset-color: #00ffa3;" onclick="applyMathPreset('green')">Verde Hacker</button>
+                            <button class="theme-preset-btn" style="--preset-color: #ffd93d;" onclick="applyMathPreset('gold')">Dourado Mestre</button>
+                        </div>
+                        <div class="color-picker-row">
+                            <label class="subtitle">Cor Principal (Destaque):</label>
+                            <input type="color" id="primary-color-picker" value="#00f5ff" onchange="changePrimaryColor(this.value)">
+                        </div>
+                        <div class="color-picker-row">
+                            <label class="subtitle">Cor de Fundo:</label>
+                            <input type="color" id="bg-color-picker" value="#07030f" onchange="changeBgColor(this.value)">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- FASE 1 & MODO SOBREVIVÊNCIA -->
+        <div id="view-fastcalc" class="view">
+            <div class="calc-wrapper">
+                <div class="phase-top">
+                    <button class="btn-exit" onclick="confirmExitPhase()">← Sair</button>
+                    <div class="hearts" id="calc-hearts" aria-label="vidas">❤️ ❤️ ❤️</div>
+                </div>
+                <div class="calc-top-info">
+                    <div>
+                        <div class="calc-level-tag" id="calc-level-title">NÍVEL 1</div>
+                        <div class="calc-subtext" id="calc-step-text">Conta 1 de 5</div>
+                    </div>
+                    <div class="calc-xp-top">
+                        <span id="calc-xp-val">120</span>
+                        <span id="calc-xp-label">XP RECOMPENSA</span>
+                    </div>
+                </div>
+                <div class="step-dots" id="calc-dots"></div>
+                <div class="calc-expression" id="calc-expr">11 + 14</div>
+                <div class="chapter-pill" id="calc-chapter">CAP 1</div>
+                <div class="feedback" id="calc-feedback"></div>
+                <div class="calc-display" id="calc-display"></div>
+                <div class="numpad">
+                    <button class="num-btn" onclick="pressKey('1')">1</button>
+                    <button class="num-btn" onclick="pressKey('2')">2</button>
+                    <button class="num-btn" onclick="pressKey('3')">3</button>
+                    <button class="num-btn" onclick="pressKey('4')">4</button>
+                    <button class="num-btn" onclick="pressKey('5')">5</button>
+                    <button class="num-btn" onclick="pressKey('6')">6</button>
+                    <button class="num-btn" onclick="pressKey('7')">7</button>
+                    <button class="num-btn" onclick="pressKey('8')">8</button>
+                    <button class="num-btn" onclick="pressKey('9')">9</button>
+                    <button class="num-btn hint" onclick="useHint()" aria-label="Dica">💡</button>
+                    <button class="num-btn" onclick="pressKey('0')">0</button>
+                    <button class="num-btn minus" onclick="pressKey('-')">-</button>
+                    <button class="num-btn delete full-width" style="grid-column: span 3;" onclick="pressDelete()" aria-label="Apagar">⌫ APAGAR</button>
+                </div>
+                <button class="btn-go" onclick="submitFastCalc()">GO!</button>
+            </div>
+        </div>
+
+        <!-- FASE 2 DINÂMICA (CRUZADINHA) -->
+        <div id="view-crossword" class="view">
+            <div class="quiz-wrapper">
+                <div class="phase-top">
+                    <button class="btn-exit" onclick="confirmExitPhase()">← Sair</button>
+                    <div class="hearts" id="crossword-hearts" aria-label="vidas">❤️ ❤️ ❤️</div>
+                </div>
+                <div class="quiz-header">
+                    <div>
+                        <h1 tabindex="-1" id="crossword-title">Cruzadinha Matemática</h1>
+                        <p class="subtitle" id="crossword-subtitle">Resolva as equações e complete os espaços vazios!</p>
+                    </div>
+                    <button class="btn-secondary" onclick="useHint()">💡 Dica (5 🌕)</button>
+                </div>
+                <div class="feedback" id="crossword-feedback"></div>
+                <div class="question-box">
+                    <p class="margin-bottom-10">Complete os números que faltam no tabuleiro:</p>
+                    <div class="crossword-board" id="crossword-board"></div>
+                    <p class="subtitle">Dica: Preencha todos os campos destacados em azul neon.</p>
+                </div>
+                <button class="btn-primary" onclick="submitCrossword()">Verificar Cruzadinha</button>
+            </div>
+        </div>
+
+        <!-- FASES DE QUIZ (EQUAÇÕES, FUNÇÕES, INEQUAÇÕES) -->
+        <div id="view-quiz" class="view">
+            <div class="quiz-wrapper">
+                <div class="phase-top">
+                    <button class="btn-exit" onclick="confirmExitPhase()">← Sair</button>
+                    <div class="hearts" id="quiz-hearts" aria-label="vidas">❤️ ❤️ ❤️</div>
+                </div>
+                <div class="quiz-header">
+                    <div>
+                        <h1 tabindex="-1" id="quiz-level-heading">Linear Quest</h1>
+                        <p class="subtitle" id="quiz-level-sub">Nível</p>
+                    </div>
+                    <button class="btn-secondary" onclick="useHint()">💡 Dica (5 🌕)</button>
+                </div>
+                <div class="feedback" id="quiz-feedback"></div>
+                <div class="question-box">
+                    <div class="equation-container" id="quiz-equation"></div>
+                    <p id="quiz-question">Qual a solução correta?</p>
+                </div>
+                <div class="options-grid" id="quiz-options"></div>
+                <button class="btn-primary" onclick="submitQuiz()">Enviar Resposta</button>
+            </div>
+        </div>
+
+        <!-- SUCESSO / TELA FINAL -->
+        <div id="view-success" class="view">
+            <div class="success-graphic">
+                <div class="circle left">+</div>
+                <div class="circle main">÷</div>
+                <div class="circle right">✓</div>
+            </div>
+            <h1 tabindex="-1" class="success-title" id="success-title-text">DESAFIO RESOLVIDO!</h1>
+            <div class="xp-gained" id="success-xp-gained">+0 XP</div>
+            <div class="success-details">
+                <div class="success-stat">🎯 <span id="success-correct">0</span> acertos</div>
+                <div class="success-stat">❌ <span id="success-errors">0</span> erros</div>
+            </div>
+            <div class="rewards-row">
+                <span id="success-xp-text">0/500 XP</span>
+                <span id="success-coins-text">🌕 +0 Coins</span>
+            </div>
+            <div class="progress-bar-bg full-width" style="max-width:480px;">
+                <div class="progress-bar-fill" id="success-progress-bar" style="width:0%;"></div>
+            </div>
+            <button class="btn-outline" onclick="nextMission()">PRÓXIMA MISSÃO</button>
+            <button class="btn-secondary margin-top-10" onclick="goHome()">Voltar ao início</button>
+        </div>
+
+    </main>
+</div>
+
+<!-- MODAL CONFIRMAÇÃO -->
+<div id="confirm-modal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+        <h2 id="confirm-title">Tem certeza?</h2>
+        <p id="confirm-message"></p>
+        <div class="modal-actions">
+            <button class="btn-secondary" onclick="closeConfirm()">Cancelar</button>
+            <button class="btn-danger" id="confirm-ok">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL LEVEL UP -->
+<div id="levelup-overlay" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-card">
+        <div class="levelup-emoji">🎉</div>
+        <div class="levelup-title">NÍVEL UP!</div>
+        <div class="levelup-level" id="levelup-level">2</div>
+        <p>Você alcançou o nível <strong id="levelup-level-text">2</strong>!</p>
+        <div class="modal-actions">
+            <button class="btn-primary" onclick="closeLevelUp()">Continuar</button>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ============================================================
+   DADOS DOS NÍVEIS (CURRÍCULO EXPANDIDO)
+============================================================ */
+const levelsData = [
+    { 
+      id: 0, 
+      type: 'fastcalc', 
+      title: 'Nível 1 - Operações Rápidas', 
+      chapter: 'CAP 1 • Fundamentos Aritméticos', 
+      xpReward: 120, 
+      coinsReward: 20,
+      questions: [
+        { expr: '11 + 14', ans: '25' }, { expr: '32 + 15', ans: '47' },
+        { expr: '50 - 20', ans: '30' }, { expr: '8 + 17', ans: '25' },
+        { expr: '45 - 12', ans: '33' }, { expr: '23 + 19', ans: '42' },
+        { expr: '64 - 28', ans: '36' }, { expr: '19 + 26', ans: '45' },
+        { expr: '14 + 29', ans: '43' }, { expr: '38 + 24', ans: '62' }
+      ] 
+    },
+    { 
+      id: 1, 
+      type: 'crossword', 
+      title: 'Nível 2 - Cruzadinha Matemática', 
+      chapter: 'CAP 2 • Operações e Lógica', 
+      xpReward: 150, 
+      coinsReward: 25,
+      crosswordData: {
+        cols: 5,
+        rows: 4,
+        grid: [
+          ['5', '+', '3', '=', '8'],
+          ['4', '+', '2', '=', '6'],
+          ['4', '+', '2', '=', '6'],
+          ['9', '+', '5', '=', '14']
+        ],
+        editable: [
+          { r: 0, c: 2, ans: '3' },
+          { r: 2, c: 0, ans: '4' }
+        ]
+      }
+    },
+    { 
+      id: 2, 
+      type: 'quiz', 
+      title: 'Nível 3 - Sistemas de Equações', 
+      chapter: 'CAP 3 • Sistemas Lineares', 
+      xpReward: 180, 
+      coinsReward: 30,
+      quizQuestions: [
+        { equation: 'x + y = 5\nx - y = 1', question: 'Quanto valem x e y?', options: ['x=3, y=2','x=4, y=1','x=-3, y=-2','x=5, y=0'], correctIndex: 0 },
+        { equation: 'x + y = 10\nx - y = 4', question: 'Quanto valem x e y?', options: ['x=7, y=3','x=5, y=5','x=8, y=2','x=6, y=4'], correctIndex: 0 },
+        { equation: '2x + y = 12\nx - y = 3', question: 'Quanto valem x e y?', options: ['x=5, y=2','x=4, y=4','x=6, y=0','x=3, y=6'], correctIndex: 0 }
+      ] 
+    },
+    { 
+      id: 3, 
+      type: 'quiz', 
+      title: 'Nível 4 - Função do 1º Grau f(x) = ax + b', 
+      chapter: 'CAP 4 • Coeficientes Angular e Linear', 
+      xpReward: 210, 
+      coinsReward: 35,
+      quizQuestions: [
+        { equation: 'f(x) = 3x + 7', question: 'Qual é o coeficiente angular (a) desta função?', options: ['a = 3','a = 7','a = -3','a = 1'], correctIndex: 0 },
+        { equation: 'f(x) = -2x + 10', question: 'Onde o gráfico da função corta o eixo Y?', options: ['y = 10','y = -2','y = 5','y = 0'], correctIndex: 0 },
+        { equation: 'f(x) = 4x - 8', question: 'Qual é o zero (raiz) da função onde f(x) = 0?', options: ['x = 2','x = -2','x = 8','x = 4'], correctIndex: 0 }
+      ] 
+    },
+    { 
+      id: 4, 
+      type: 'quiz', 
+      title: 'Nível 5 - Inequações Lineares', 
+      chapter: 'CAP 5 • Desigualdades e Intervalos', 
+      xpReward: 250, 
+      coinsReward: 40,
+      quizQuestions: [
+        { equation: '2x + 4 > 10', question: 'Qual é o conjunto solução para x?', options: ['x > 3','x < 3','x > 7','x >= 3'], correctIndex: 0 },
+        { equation: '-3x + 6 <= 0', question: 'Resolva a inequação para x:', options: ['x >= 2','x <= 2','x <= -2','x > 3'], correctIndex: 0 },
+        { equation: '5x - 5 < 20', question: 'Qual é o maior valor inteiro que x pode assumir?', options: ['4','5','3','0'], correctIndex: 0 }
+      ] 
+    }
+];
+
+const challengesData = [
+    { id:'c1', icon:'🎯', title:'Primeira Vitória', description:'Conclua pelo menos 1 nível', xp:50, coins:10, isCompleted:s=>s.completedLevels.length>=1 },
+    { id:'c2', icon:'⚡', title:'Mestre do Conhecimento', description:'Conclua todas as 5 fases da jornada', xp:250, coins:50, isCompleted:s=>s.completedLevels.length>=levelsData.length },
+    { id:'c3', icon:'🔥', title:'Acumulador de XP', description:'Acumule 300 ou mais XP total', xp:100, coins:20, isCompleted:s=>s.currentXP>=300 },
+    { id:'c4', icon:'🎯', title:'Precisão Matemática', description:'Acerte 10 questões no total', xp:80, coins:15, isCompleted:s=>s.correctAnswers>=10 },
+    { id:'c5', icon:'💎', title:'Magnata do Jogo', description:'Acumule 50 moedas', xp:100, coins:20, isCompleted:s=>s.coins>=50 }
+];
+
+const shopData = [
+    { id:'hint', icon:'💡', title:'Dica Extra', cost:5, description:'Adiciona 1 dica reutilizável nas fases', oneTime:false, onBuy:s=>{ s.hints++; } },
+    { id:'heart', icon:'❤️', title:'Coração de Vida', cost:10, description:'Recupera 1 vida de energia (máx. 5)', oneTime:false, canBuy:s=>s.hearts<5, onBuy:s=>{ s.hearts=Math.min(s.hearts+1,5); } },
+    { id:'theme-cyan', icon:'🎨', title:'Sintonizador Ciano', cost:25, description:'Ativa destaque neon ciano', oneTime:true, onBuy:()=>{ document.body.style.setProperty('--accent-primary', '#00f5ff'); } },
+    { id:'theme-yellow', icon:'🌟', title:'Sintonizador Dourado', cost:25, description:'Ativa destaque neon ouro', oneTime:true, onBuy:()=>{ document.body.style.setProperty('--accent-primary', '#ffd93d'); } }
+];
+
+/* ============================================================
+   ESTADO GLOBAL
+============================================================ */
+const persistentDefaults = {
+    playerName: 'Kauã',
+    currentXP: 0, maxXP: 500, coins: 0, hearts: 3,
+    completedLevels: [], claimedChallenges: [], correctAnswers: 0, wrongAnswers: 0,
+    totalQuestions: 0, currentStreak: 0, bestStreak: 0, totalPlaySeconds: 0,
+    hints: 0, shopPurchases: [], soundEnabled: true,
+    customPrimary: '#00f5ff', customSecondary: '#ff2ecc', customBg: '#07030f'
+};
+
+const transientDefaults = {
+    currentLevelIndex: 0, fastCalcIndex: 0, inputValue: '',
+    selectedOptionIndex: null, practiceMode: false, isSurvivalMode: false,
+    survivalScore: 0, currentQuizQuestion: null, currentFastCalcQuestions: null,
+    currentCrosswordSolutions: {}
+};
+
+let appState = { ...persistentDefaults, ...transientDefaults };
+let audioCtx = null;
+
+/* ============================================================
+   PERSISTÊNCIA (LOCALSTORAGE)
+============================================================ */
+function loadGame() {
+    try {
+        const saved = JSON.parse(localStorage.getItem('linearQuestSave') || 'null');
+        if (saved && typeof saved === 'object') {
+            Object.keys(transientDefaults).forEach(k => delete saved[k]);
+            appState = { ...persistentDefaults, ...saved, ...transientDefaults };
+        } else appState = { ...persistentDefaults, ...transientDefaults };
+    } catch(e) { appState = { ...persistentDefaults, ...transientDefaults }; }
+    applySavedColors();
+}
+
+function saveGame() {
+    try {
+        const s = { ...appState };
+        Object.keys(transientDefaults).forEach(k => delete s[k]);
+        localStorage.setItem('linearQuestSave', JSON.stringify(s));
+    } catch(e) {}
+}
+loadGame();
+
+/* ============================================================
+   SISTEMA DE CORES E TEMAS (ESTILO TREINO DE MIRA)
+============================================================ */
+const mathPresets = {
+    cyan: { primary: '#00f5ff', secondary: '#ff2ecc', bg: '#07030f' },
+    purple: { primary: '#a855f7', secondary: '#00f5ff', bg: '#080310' },
+    green: { primary: '#00ffa3', secondary: '#00f5ff', bg: '#030a06' },
+    gold: { primary: '#ffd93d', secondary: '#ff9f1c', bg: '#0a0803' }
+};
+
+function applyMathPreset(key) {
+    const p = mathPresets[key];
+    if(!p) return;
+    appState.customPrimary = p.primary;
+    appState.customSecondary = p.secondary;
+    appState.customBg = p.bg;
+    applySavedColors();
+    saveGame();
+    showToast(`Tema ${key} aplicado!`, 'success');
+}
+
+function changePrimaryColor(val) {
+    appState.customPrimary = val;
+    applySavedColors();
+    saveGame();
+}
+
+function changeBgColor(val) {
+    appState.customBg = val;
+    applySavedColors();
+    saveGame();
+}
+
+function applySavedColors() {
+    if(appState.customPrimary) {
+        document.documentElement.style.setProperty('--accent-primary', appState.customPrimary);
+        const cp = document.getElementById('primary-color-picker');
+        if(cp) cp.value = appState.customPrimary;
+    }
+    if(appState.customSecondary) {
+        document.documentElement.style.setProperty('--accent-secondary', appState.customSecondary);
+    }
+    if(appState.customBg) {
+        document.documentElement.style.setProperty('--bg-dark', appState.customBg);
+        const bp = document.getElementById('bg-color-picker');
+        if(bp) bp.value = appState.customBg;
+    }
+}
+
+/* ============================================================
+   XP E SISTEMA DE NÍVEL
+============================================================ */
+function getPlayerLevel() { return Math.floor(appState.currentXP / appState.maxXP) + 1; }
+function getLevelXP() { return appState.currentXP % appState.maxXP; }
+function addXP(amount) {
+    if (appState.practiceMode) return;
+    const oldLvl = getPlayerLevel();
+    appState.currentXP += amount;
+    const newLvl = getPlayerLevel();
+    if (newLvl > oldLvl) showLevelUp(newLvl);
+    saveGame();
+}
+
+/* ============================================================
+   CONTADOR DE TEMPO
+============================================================ */
+let secondsSinceSave = 0;
+setInterval(() => {
+    appState.totalPlaySeconds++;
+    if (++secondsSinceSave >= 10) { saveGame(); secondsSinceSave = 0; }
+}, 1000);
+window.addEventListener('beforeunload', saveGame);
+
+/* ============================================================
+   EFEITOS VISUAIS E ÁUDIO (WEB AUDIO API)
+============================================================ */
+function showToast(msg, type='info', dur=3000) {
+    const c = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.textContent = msg;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity 0.3s'; setTimeout(() => t.remove(), 300); }, dur);
+}
+
+function playSound(type) {
+    if (!appState.soundEnabled) return;
+    try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const play = (freq, dur, wave='sine', delay=0) => {
+            const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+            o.type = wave; o.frequency.value = freq;
+            const s = audioCtx.currentTime + delay;
+            g.gain.setValueAtTime(0.1, s);
+            g.gain.exponentialRampToValueAtTime(0.001, s + dur);
+            o.connect(g); g.connect(audioCtx.destination);
+            o.start(s); o.stop(s + dur);
+        };
+        if (type==='correct'){ play(660, 0.1); play(880, 0.15, 'sine', 0.08); }
+        else if (type==='wrong') play(180, 0.25, 'sawtooth');
+        else if (type==='click') play(400, 0.05);
+        else if (type==='levelup'){ play(523,0.1); play(659,0.1,'sine',0.1); play(784,0.2,'sine',0.2); }
+    } catch(e) {}
+}
+
+function vibrate(ms=30) { if (navigator.vibrate) navigator.vibrate(ms); }
+
+function particleBurst(x, y, colors=['#00f5ff','#00ffa3','#ffd93d','#8b5cf6']) {
+    const count = 14;
+    for (let i = 0; i < count; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        const angle = (Math.PI * 2 * i) / count;
+        const dist = 60 + Math.random() * 80;
+        p.style.left = x + 'px';
+        p.style.top = y + 'px';
+        p.style.background = colors[i % colors.length];
+        p.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+        p.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+        p.style.boxShadow = `0 0 10px ${colors[i % colors.length]}`;
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1000);
+    }
+}
+
+function launchConfetti() {
+    const colors = ['#00f5ff','#00ffa3','#ffd93d','#ff2ecc','#8b5cf6','#ff4d6d'];
+    for (let i = 0; i < 50; i++) {
+        const c = document.createElement('div');
+        c.className = 'confetti';
+        c.style.left = Math.random() * 100 + 'vw';
+        c.style.background = colors[Math.floor(Math.random()*colors.length)];
+        c.style.animationDuration = (2 + Math.random() * 2) + 's';
+        c.style.animationDelay = (Math.random() * 0.5) + 's';
+        c.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 4500);
+    }
+}
+
+function animateNumber(el, from, to, dur=600) {
+    if (from === to) { el.textContent = to; return; }
+    const start = performance.now();
+    function step(t) {
+        const p = Math.min((t - start) / dur, 1);
+        const eased = 1 - Math.pow(1 - p, 3);
+        el.textContent = Math.round(from + (to - from) * eased);
+        if (p < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+}
+
+/* ============================================================
+   MODAIS E CONFIRMAÇÕES
+============================================================ */
+function confirmAction(title, message, onConfirm, okLabel='Confirmar') {
+    document.getElementById('confirm-title').textContent = title;
+    document.getElementById('confirm-message').textContent = message;
+    const ok = document.getElementById('confirm-ok');
+    const n = ok.cloneNode(true);
+    n.textContent = okLabel;
+    n.onclick = () => { closeConfirm(); onConfirm(); };
+    ok.replaceWith(n);
+    document.getElementById('confirm-modal').classList.add('show');
+}
+function closeConfirm() { document.getElementById('confirm-modal').classList.remove('show'); }
+
+function showLevelUp(lvl) {
+    document.getElementById('levelup-level').textContent = lvl;
+    document.getElementById('levelup-level-text').textContent = lvl;
+    document.getElementById('levelup-overlay').classList.add('show');
+    playSound('levelup');
+    launchConfetti();
+}
+function closeLevelUp() { document.getElementById('levelup-overlay').classList.remove('show'); }
+
+/* ============================================================
+   NAVEGAÇÃO E ACESSIBILIDADE DE FOCO
+============================================================ */
+const views = {
+    home: document.getElementById('view-home'),
+    challenges: document.getElementById('view-challenges'),
+    shop: document.getElementById('view-shop'),
+    profile: document.getElementById('view-profile'),
+    fastcalc: document.getElementById('view-fastcalc'),
+    crossword: document.getElementById('view-crossword'),
+    quiz: document.getElementById('view-quiz'),
+    success: document.getElementById('view-success')
+};
+
+const navItems = {
+    home: document.getElementById('nav-home'),
+    challenges: document.getElementById('nav-challenges'),
+    shop: document.getElementById('nav-shop'),
+    profile: document.getElementById('nav-profile')
+};
+
+function switchView(name) {
+    Object.values(views).forEach(v => v.classList.remove('active'));
+    Object.values(navItems).forEach(i => i?.classList.remove('active'));
+    views[name].classList.add('active');
+    if (navItems[name]) navItems[name].classList.add('active');
+    
+    const heading = views[name].querySelector('h1');
+    if (heading) {
+        heading.focus();
+    }
+    document.querySelector('.main-content').scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function goHome() { renderHome(); switchView('home'); }
+function openChallenges() { renderChallenges(); switchView('challenges'); }
+function openShop() { renderShop(); switchView('shop'); }
+function openProfile() { renderProfile(); switchView('profile'); }
+
+/* ============================================================
+   RENDERIZAR TELA PRINCIPAL (HOME)
+============================================================ */
+function renderHome() {
+    const lvl = getPlayerLevel(), lvlXP = getLevelXP();
+    const prog = Math.min((lvlXP / appState.maxXP) * 100, 100);
+
+    document.getElementById('home-player-name').textContent = appState.playerName || 'Kauã';
+    document.getElementById('home-level').textContent = lvl;
+    const homeXP = document.getElementById('home-xp');
+    const prev = parseInt(homeXP.textContent) || 0;
+    animateNumber(homeXP, prev, lvlXP);
+    document.getElementById('home-max-xp').textContent = appState.maxXP;
+    document.getElementById('home-progress-text').textContent = `${Math.round(prog)}%`;
+    document.getElementById('home-progress-bar').style.width = `${prog}%`;
+    document.getElementById('home-xp-left').textContent = `Faltam ${appState.maxXP - lvlXP} XP para o nível ${lvl + 1}`;
+    document.getElementById('home-coins').textContent = appState.coins;
+    document.getElementById('home-streak').textContent = appState.currentStreak;
+    document.getElementById('home-accuracy').textContent = calculateAccuracy();
+
+    renderLevels();
+}
+
+function renderLevels() {
+    const c = document.getElementById('levels-container');
+    c.innerHTML = '';
+    levelsData.forEach((level, i) => {
+        const done = appState.completedLevels.includes(i);
+        const unlocked = i === 0 || appState.completedLevels.includes(i - 1);
+        const card = document.createElement('div');
+        card.className = `level-card ${unlocked ? '' : 'locked'} ${done ? 'completed' : ''}`;
+        card.setAttribute('role', 'button');
+        card.setAttribute('tabindex', unlocked ? '0' : '-1');
+        if (unlocked && !done) card.onclick = () => startLevel(i, false);
+        card.innerHTML = `
+            <div class="level-icon ${done ? 'completed' : unlocked ? 'active' : 'inactive'}">${done ? '✓' : i + 1}</div>
+            <div class="level-info">
+                <h3>Nível ${i + 1}</h3>
+                <p>${level.title.split(' - ')[1] || level.title}</p>
+                ${done ? '<span class="completed-label">✓ CONCLUÍDO</span>' : ''}
+            </div>
+            <div class="level-actions">
+                <div class="level-xp">${level.xpReward} XP</div>
+                ${done ? `<button class="btn-practice" onclick="event.stopPropagation();startLevel(${i}, true)">Praticar</button>` : ''}
+            </div>`;
+        if (unlocked && !done) {
+            card.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startLevel(i, false); }
+            });
+        }
+        c.appendChild(card);
+    });
+}
+
+/* ============================================================
+   PERFIL COM NOME EDITÁVEL
+============================================================ */
+function renderProfile() {
+    const input = document.getElementById('profile-name-input');
+    input.value = appState.playerName || 'Kauã';
+    input.onchange = (e) => {
+        appState.playerName = e.target.value.trim() || 'Kauã';
+        saveGame();
+        showToast(`Nome alterado para ${appState.playerName}!`, 'success');
+    };
+
+    document.getElementById('profile-level').textContent = getPlayerLevel();
+    document.getElementById('profile-total-xp').textContent = appState.currentXP;
+    document.getElementById('profile-coins').textContent = appState.coins;
+    document.getElementById('profile-completed-levels').textContent = appState.completedLevels.length;
+    document.getElementById('profile-questions').textContent = appState.totalQuestions;
+    document.getElementById('profile-correct').textContent = appState.correctAnswers;
+    document.getElementById('profile-wrong').textContent = appState.wrongAnswers;
+    document.getElementById('profile-accuracy').textContent = calculateAccuracy();
+    document.getElementById('profile-streak').textContent = appState.currentStreak;
+    document.getElementById('profile-best-streak').textContent = appState.bestStreak;
+    document.getElementById('profile-time').textContent = `${Math.floor(appState.totalPlaySeconds / 60)}m`;
+    document.getElementById('btn-sound').textContent = appState.soundEnabled ? '🔊 Som: Ligado' : '🔇 Som: Desligado';
+    applySavedColors();
+}
+
+function toggleSound() {
+    appState.soundEnabled = !appState.soundEnabled;
+    saveGame(); renderProfile();
+    if (appState.soundEnabled) playSound('click');
+}
+
+function resetProgress() {
+    confirmAction('Apagar todo o progresso?',
+        'Todo o XP, moedas e fases concluídas serão apagados. Esta ação é irreversível.',
+        () => {
+            localStorage.removeItem('linearQuestSave');
+            appState = { ...persistentDefaults, ...transientDefaults };
+            saveGame();
+            showToast('Progresso totalmente reiniciado.', 'info');
+            goHome();
+        }, 'Apagar tudo');
+}
+
+/* ============================================================
+   MÉTRICAS E ESTATÍSTICAS
+============================================================ */
+function calculateAccuracy() {
+    if (appState.totalQuestions === 0) return '—';
+    return Math.round((appState.correctAnswers / appState.totalQuestions) * 100) + '%';
+}
+function registerCorrect() {
+    appState.correctAnswers++;
+    appState.totalQuestions++;
+    appState.currentStreak++;
+    if (appState.currentStreak > appState.bestStreak) appState.bestStreak = appState.currentStreak;
+    saveGame();
+}
+function registerWrong() {
+    appState.wrongAnswers++;
+    appState.totalQuestions++;
+    appState.currentStreak = 0;
+    saveGame();
+}
+
+/* ============================================================
+   SISTEMA DE VIDAS (CORAÇÕES)
+============================================================ */
+function resetHearts() { appState.hearts = 3; updateHearts(); saveGame(); }
+function loseHeart() {
+    appState.hearts--;
+    updateHearts(); saveGame();
+    if (appState.hearts <= 0) {
+        setTimeout(() => {
+            showToast('💔 Você ficou sem vidas!', 'error', 3000);
+            resetHearts();
+            if (appState.isSurvivalMode) {
+                showToast(`Fim do modo Sobrevivência! Você acertou ${appState.survivalScore} seguidas.`, 'info', 4000);
+                goHome();
+            } else {
+                restartCurrentPhase();
+            }
+        }, 100);
+        return true;
+    }
+    return false;
+}
+
+function restartCurrentPhase() {
+    const level = levelsData[appState.currentLevelIndex];
+    if (!level) return;
+    if (level.type === 'fastcalc') {
+        appState.fastCalcIndex = 0;
+        appState.inputValue = '';
+        appState.currentFastCalcQuestions = pickRandom(level.questions, 5);
+        renderFastCalcQuestion();
+    } else if (level.type === 'crossword') {
+        startCrossword(level);
+    } else if (level.type === 'quiz') {
+        startQuiz(level);
+    }
+}
+
+function updateHearts() {
+    const h = '❤️ '.repeat(Math.max(appState.hearts, 0)).trim() || '💔';
+    ['calc-hearts','crossword-hearts','quiz-hearts'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) { el.innerText = h; el.setAttribute('aria-label', `${appState.hearts} vidas restantes`); }
+    });
+}
+
+/* ============================================================
+   DESAFIOS & CONQUISTAS
+============================================================ */
+function renderChallenges() {
+    const c = document.getElementById('challenges-container');
+    c.innerHTML = '';
+    challengesData.forEach(ch => {
+        const done = ch.isCompleted(appState);
+        const claimed = appState.claimedChallenges.includes(ch.id);
+        const card = document.createElement('div');
+        card.className = 'challenge-card';
+        let btn = claimed ? '<button class="btn-claim" disabled>Resgatado ✓</button>'
+                 : done ? `<button class="btn-claim" onclick="claimReward('${ch.id}')">Resgatar Recompensa!</button>`
+                 : '<button class="btn-claim" disabled>Em Progresso</button>';
+        card.innerHTML = `
+            <div class="challenge-header">
+                <div class="challenge-icon">${ch.icon}</div>
+                <div>
+                    <h3>${ch.title}</h3>
+                    <p class="subtitle">${ch.description}</p>
+                </div>
+            </div>
+            <div>
+                <span class="challenge-reward">+${ch.xp} XP • 🌕 ${ch.coins} Coins</span>
+                <div class="margin-top-18">${btn}</div>
+            </div>`;
+        c.appendChild(card);
+    });
+}
+
+function claimReward(id) {
+    const ch = challengesData.find(c => c.id === id);
+    if (!ch || appState.claimedChallenges.includes(id) || !ch.isCompleted(appState)) return;
+    appState.claimedChallenges.push(id);
+    addXP(ch.xp);
+    appState.coins += ch.coins;
+    saveGame();
+    playSound('correct');
+    showToast(`Recompensa: +${ch.xp} XP e +${ch.coins} 🌕`, 'success');
+    renderChallenges();
+}
+
+/* ============================================================
+   LOJA VIRTUAL
+============================================================ */
+function renderShop() {
+    document.getElementById('shop-coins').textContent = appState.coins;
+    const c = document.getElementById('shop-container');
+    c.innerHTML = '';
+    shopData.forEach(item => {
+        const owned = item.oneTime && appState.shopPurchases.includes(item.id);
+        const cantBuy = item.canBuy && !item.canBuy(appState);
+        const canAfford = appState.coins >= item.cost && !owned && !cantBuy;
+        const card = document.createElement('div');
+        card.className = `shop-card ${owned ? 'owned' : ''}`;
+        card.innerHTML = `
+            <div class="shop-icon">${item.icon}</div>
+            <h3>${item.title}</h3>
+            <p class="subtitle" style="font-size:13px;">${item.description}</p>
+            <div class="shop-cost">🌕 ${item.cost}</div>
+            <button class="btn-claim" onclick="buyItem('${item.id}')" ${(!canAfford) ? 'disabled' : ''}>
+                ${owned ? 'Adquirido ✓' : 'Comprar'}
+            </button>`;
+        c.appendChild(card);
+    });
+}
+
+function buyItem(id) {
+    const item = shopData.find(i => i.id === id);
+    if (!item) return;
+    if (item.oneTime && appState.shopPurchases.includes(id)) return;
+    if (appState.coins < item.cost) { showToast('Moedas insuficientes.', 'error'); return; }
+    if (item.canBuy && !item.canBuy(appState)) { showToast('Ação indisponível no momento.', 'error'); return; }
+    appState.coins -= item.cost;
+    if (item.oneTime) appState.shopPurchases.push(id);
+    item.onBuy(appState);
+    saveGame(); playSound('correct');
+    showToast(`${item.icon} ${item.title} adquirido!`, 'success');
+    renderShop();
+}
+
+/* ============================================================
+   SISTEMA DE DICAS
+============================================================ */
+function useHint() {
+    if (appState.coins < 5) { showToast('São necessárias 5 🌕 para usar uma dica.', 'error'); return; }
+    const level = levelsData[appState.currentLevelIndex];
+    if (appState.isSurvivalMode || (level && level.type === 'fastcalc')) {
+        const q = appState.currentFastCalcQuestions?.[appState.fastCalcIndex];
+        if (!q) return;
+        appState.coins -= 5; saveGame();
+        showFeedback('calc-feedback', `💡 Resposta correta: ${q.ans}`, 'success');
+        showToast('Dica utilizada! -5 🌕', 'info');
+    } else if (level && level.type === 'crossword') {
+        const inputs = Array.from(document.querySelectorAll('#crossword-board input'));
+        const emptyInput = inputs.find(i => !i.value.trim());
+        if (!emptyInput) return;
+        const expected = appState.currentCrosswordSolutions[emptyInput.id];
+        if (expected) {
+            emptyInput.value = expected;
+            appState.coins -= 5; saveGame();
+            showToast('Campo preenchido com a dica! -5 🌕', 'info');
+        }
+    } else if (level && level.type === 'quiz') {
+        const q = appState.currentQuizQuestion;
+        if (!q) return;
+        const btns = document.querySelectorAll('#quiz-options .option-btn');
+        let elim = 0;
+        btns.forEach((b, i) => {
+            if (i !== q.correctIndex && !b.classList.contains('eliminated') && elim < 2) {
+                b.classList.add('eliminated'); b.disabled = true; elim++;
+            }
+        });
+        if (elim === 0) return;
+        appState.coins -= 5; saveGame();
+        showToast('Alternativas eliminadas! -5 🌕', 'info');
+    }
+}
+
+/* ============================================================
+   INICIALIZAÇÃO E SELEÇÃO DE FASES
+============================================================ */
+function startLevel(index, practice=false) {
+    const level = levelsData[index];
+    if (!level) return;
+    if (!practice && appState.completedLevels.includes(index)) return;
+    if (!practice) {
+        const unlocked = index === 0 || appState.completedLevels.includes(index - 1);
+        if (!unlocked) return;
+    }
+    appState.currentLevelIndex = index;
+    appState.practiceMode = practice;
+    appState.isSurvivalMode = false;
+    appState.hearts = 3;
+    appState.inputValue = '';
+    appState.fastCalcIndex = 0;
+    appState.selectedOptionIndex = null;
+    updateHearts();
+
+    if (practice) showToast('Modo Prática ativado — sem ganho de XP/Moedas.', 'info');
+
+    if (level.type === 'fastcalc') {
+        appState.currentFastCalcQuestions = pickRandom(level.questions, 5);
+        renderFastCalcQuestion();
+        switchView('fastcalc');
+    } else if (level.type === 'crossword') {
+        startCrossword(level);
+    } else if (level.type === 'quiz') {
+        startQuiz(level);
+    }
+}
+
+function confirmExitPhase() {
+    confirmAction('Sair da fase?', 'Todo o progresso atual da partida será perdido.',
+        () => goHome(), 'Sair');
+}
+
+function pickRandom(arr, n) {
+    const c = [...arr];
+    for (let i = c.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [c[i], c[j]] = [c[j], c[i]];
+    }
+    return c.slice(0, n);
+}
+
+/* ============================================================
+   MODO SOBREVIVÊNCIA INFINITO
+============================================================ */
+function startSurvivalMode() {
+    appState.isSurvivalMode = true;
+    appState.practiceMode = false;
+    appState.hearts = 3;
+    appState.survivalScore = 0;
+    appState.inputValue = '';
+    appState.fastCalcIndex = 0;
+    updateHearts();
+    
+    document.getElementById('calc-level-title').textContent = '⚡ SOBREVIVÊNCIA';
+    document.getElementById('calc-chapter').textContent = 'DESAFIO INFINITO';
+    document.getElementById('calc-xp-label').textContent = 'ACERTOS SEGUIDOS';
+    document.getElementById('calc-xp-val').textContent = '0';
+    document.getElementById('calc-dots').innerHTML = '';
+    
+    generateSurvivalQuestion();
+    switchView('fastcalc');
+}
+
+function generateSurvivalQuestion() {
+    const ops = ['+', '-', '*'];
+    const op = ops[Math.floor(Math.random() * ops.length)];
+    let a, b, ans, expr;
+
+    if (op === '+') {
+        a = Math.floor(Math.random() * 50) + 10;
+        b = Math.floor(Math.random() * 50) + 10;
+        ans = (a + b).toString();
+        expr = `${a} + ${b}`;
+    } else if (op === '-') {
+        a = Math.floor(Math.random() * 60) + 20;
+        b = Math.floor(Math.random() * a);
+        ans = (a - b).toString();
+        expr = `${a} - ${b}`;
+    } else {
+        a = Math.floor(Math.random() * 12) + 2;
+        b = Math.floor(Math.random() * 12) + 2;
+        ans = (a * b).toString();
+        expr = `${a} × ${b}`;
+    }
+
+    appState.currentFastCalcQuestions = [{ expr, ans }];
+    document.getElementById('calc-step-text').textContent = `Sequência: ${appState.survivalScore}`;
+    document.getElementById('calc-expr').textContent = expr;
+    document.getElementById('calc-display').textContent = '';
+    hideFeedback('calc-feedback');
+}
+
+/* ============================================================
+   FASE 1 & CÁLCULO RÁPIDO
+============================================================ */
+function renderFastCalcQuestion() {
+    const level = levelsData[appState.currentLevelIndex];
+    const qs = appState.currentFastCalcQuestions || [];
+    const q = qs[appState.fastCalcIndex];
+    if (!q) return;
+
+    document.getElementById('calc-level-title').textContent = level.title;
+    document.getElementById('calc-step-text').textContent = `Questão ${appState.fastCalcIndex + 1} de ${qs.length}`;
+    document.getElementById('calc-xp-val').textContent = level.xpReward;
+    document.getElementById('calc-xp-label').textContent = 'XP RECOMPENSA';
+    document.getElementById('calc-expr').textContent = q.expr;
+    document.getElementById('calc-chapter').textContent = level.chapter;
+    document.getElementById('calc-display').textContent = appState.inputValue;
+    hideFeedback('calc-feedback');
+    updateHearts();
+
+    const dc = document.getElementById('calc-dots');
+    dc.innerHTML = '';
+    qs.forEach((_, i) => {
+        const d = document.createElement('div');
+        d.className = `step-dot ${i === appState.fastCalcIndex ? 'active' : i < appState.fastCalcIndex ? 'completed' : ''}`;
+        dc.appendChild(d);
+    });
+}
+
+function pressKey(v) {
+    if (appState.inputValue.length >= 6) return;
+    if (v === '-' && appState.inputValue.length > 0) return;
+    appState.inputValue += v;
+    document.getElementById('calc-display').textContent = appState.inputValue;
+    playSound('click');
+}
+
+function pressDelete() {
+    appState.inputValue = appState.inputValue.slice(0, -1);
+    document.getElementById('calc-display').textContent = appState.inputValue;
+}
+
+function submitFastCalc() {
+    const q = appState.currentFastCalcQuestions?.[appState.isSurvivalMode ? 0 : appState.fastCalcIndex];
+    if (!q) return;
+    if (!appState.inputValue) { showFeedback('calc-feedback', 'Digite um valor antes de enviar.', 'error'); return; }
+
+    if (appState.inputValue === q.ans) {
+        registerCorrect(); playSound('correct'); vibrate(30);
+        const r = document.getElementById('calc-expr').getBoundingClientRect();
+        particleBurst(r.left + r.width/2, r.top + r.height/2);
+        showFeedback('calc-feedback', '✓ Resposta Correta!', 'success');
+
+        if (appState.isSurvivalMode) {
+            appState.survivalScore++;
+            addXP(15);
+            appState.coins += 2;
+            document.getElementById('calc-xp-val').textContent = appState.survivalScore;
+            appState.inputValue = '';
+            setTimeout(generateSurvivalQuestion, 600);
+        } else {
+            appState.fastCalcIndex++;
+            appState.inputValue = '';
+            if (appState.fastCalcIndex < appState.currentFastCalcQuestions.length) {
+                setTimeout(renderFastCalcQuestion, 500);
+            } else {
+                const level = levelsData[appState.currentLevelIndex];
+                setTimeout(() => completeLevel(level.xpReward, level.coinsReward), 500);
+            }
+        }
+    } else {
+        registerWrong(); playSound('wrong'); vibrate(100);
+        const dead = loseHeart();
+        showFeedback('calc-feedback', dead ? '💔 Você ficou sem vidas!' : '✕ Resposta incorreta! Você perdeu uma vida.', 'error');
+        appState.inputValue = '';
+        document.getElementById('calc-display').textContent = '';
+    }
+}
+
+/* ============================================================
+   FASE 2: CRUZADINHA MATEMÁTICA DINÂMICA
+============================================================ */
+function startCrossword(level) {
+    const data = level.crosswordData;
+    const b = document.getElementById('crossword-board');
+    b.innerHTML = '';
+    b.style.gridTemplateColumns = `repeat(${data.cols}, min(58px, 14vw))`;
+
+    appState.currentCrosswordSolutions = {};
+
+    data.grid.forEach((row, r) => {
+        row.forEach((char, c) => {
+            const cell = document.createElement('div');
+            const editConfig = data.editable.find(e => e.r === r && e.c === c);
+
+            if (editConfig) {
+                cell.className = 'crossword-cell';
+                const inputId = `cw-${r}-${c}`;
+                appState.currentCrosswordSolutions[inputId] = editConfig.ans;
+
+                cell.innerHTML = `<input type="text" id="${inputId}" maxlength="3" autocomplete="off" aria-label="Espaço da cruzadinha">`;
+            } else if (char === ' ') {
+                cell.className = 'crossword-cell empty';
+            } else {
+                cell.className = 'crossword-cell static';
+                cell.textContent = char;
+            }
+            b.appendChild(cell);
+        });
+    });
+
+    document.getElementById('crossword-title').textContent = level.title;
+    document.getElementById('crossword-subtitle').textContent = level.chapter;
+    hideFeedback('crossword-feedback');
+    updateHearts();
+    switchView('crossword');
+}
+
+function submitCrossword() {
+    let allCorrect = true;
+    let hasEmpty = false;
+
+    Object.keys(appState.currentCrosswordSolutions).forEach(id => {
+        const input = document.getElementById(id);
+        if (!input) return;
+        const val = input.value.trim();
+        const expected = appState.currentCrosswordSolutions[id];
+        const cell = input.parentElement;
+
+        cell.classList.remove('correct', 'wrong');
+
+        if (!val) {
+            hasEmpty = true;
+            allCorrect = false;
+        } else if (val === expected) {
+            cell.classList.add('correct');
+        } else {
+            cell.classList.add('wrong');
+            allCorrect = false;
+        }
+    });
+
+    if (hasEmpty) {
+        showFeedback('crossword-feedback', 'Preencha todos os espaços vazios.', 'error');
+        return;
+    }
+
+    if (allCorrect) {
+        registerCorrect(); playSound('correct'); vibrate(30);
+        const r = document.querySelector('.question-box').getBoundingClientRect();
+        particleBurst(r.left + r.width/2, r.top + r.height/2);
+        showFeedback('crossword-feedback', '✓ Cruzadinha resolvida com sucesso!', 'success');
+        const level = levelsData[appState.currentLevelIndex];
+        setTimeout(() => completeLevel(level.xpReward, level.coinsReward), 700);
+    } else {
+        registerWrong(); playSound('wrong'); vibrate(100);
+        const dead = loseHeart();
+        showFeedback('crossword-feedback', dead ? '💔 Você ficou sem vidas!' : '✕ Existem valores incorretos. Verifique e tente de novo.', 'error');
+    }
+}
+
+/* ============================================================
+   QUIZ DE EQUAÇÕES E FUNÇÕES (FASES 3, 4 E 5)
+============================================================ */
+function startQuiz(level) {
+    appState.selectedOptionIndex = null;
+    const q = pickRandom(level.quizQuestions, 1)[0];
+    appState.currentQuizQuestion = q;
+
+    document.getElementById('quiz-level-heading').textContent = level.title;
+    document.getElementById('quiz-level-sub').textContent = level.chapter;
+    document.getElementById('quiz-equation').textContent = q.equation;
+    document.getElementById('quiz-question').textContent = q.question;
+    hideFeedback('quiz-feedback');
+    updateHearts();
+
+    const c = document.getElementById('quiz-options');
+    c.innerHTML = '';
+    q.options.forEach((opt, i) => {
+        const b = document.createElement('button');
+        b.className = 'option-btn';
+        b.textContent = opt;
+        b.onclick = () => {
+            if (b.classList.contains('eliminated')) return;
+            document.querySelectorAll('#quiz-options .option-btn').forEach(x => x.classList.remove('selected'));
+            b.classList.add('selected');
+            appState.selectedOptionIndex = i;
+            playSound('click');
+        };
+        c.appendChild(b);
+    });
+    switchView('quiz');
+}
+
+function submitQuiz() {
+    const level = levelsData[appState.currentLevelIndex];
+    const q = appState.currentQuizQuestion;
+    if (!q) return;
+
+    if (appState.selectedOptionIndex === null) {
+        showFeedback('quiz-feedback', 'Selecione uma alternativa antes de responder.', 'error');
+        return;
+    }
+
+    if (appState.selectedOptionIndex === q.correctIndex) {
+        registerCorrect(); playSound('correct'); vibrate(30);
+        const r = document.querySelector('.question-box').getBoundingClientRect();
+        particleBurst(r.left + r.width/2, r.top + r.height/2);
+        showFeedback('quiz-feedback', '✓ Resposta Correta!', 'success');
+        setTimeout(() => completeLevel(level.xpReward, level.coinsReward), 600);
+    } else {
+        registerWrong(); playSound('wrong'); vibrate(100);
+        const dead = loseHeart();
+        showFeedback('quiz-feedback', dead ? '💔 Você ficou sem vidas!' : '✕ Alternativa incorreta! Você perdeu uma vida.', 'error');
+    }
+}
+
+/* ============================================================
+   TELA FINAL DE SUCESSO DO NÍVEL
+============================================================ */
+function completeLevel(xp, coins) {
+    const idx = appState.currentLevelIndex;
+    if (!appState.practiceMode && appState.completedLevels.includes(idx)) return;
+
+    if (!appState.practiceMode) {
+        addXP(xp);
+        appState.coins += coins;
+        appState.completedLevels.push(idx);
+    }
+    saveGame();
+
+    document.getElementById('success-xp-gained').textContent = appState.practiceMode ? '+0 XP (Prática)' : `+${xp} XP`;
+    document.getElementById('success-xp-text').textContent = `${getLevelXP()}/${appState.maxXP} XP`;
+    document.getElementById('success-coins-text').textContent = appState.practiceMode ? '🌕 +0 Coins' : `🌕 +${coins} Coins`;
+    document.getElementById('success-correct').textContent = appState.correctAnswers;
+    document.getElementById('success-errors').textContent = appState.wrongAnswers;
+
+    const prog = Math.min((getLevelXP() / appState.maxXP) * 100, 100);
+    document.getElementById('success-progress-bar').style.width = `${prog}%`;
+
+    switchView('success');
+    launchConfetti();
+}
+
+function nextMission() {
+    const n = levelsData.findIndex((_, i) => !appState.completedLevels.includes(i));
+    const unlocked = n !== -1 && (n === 0 || appState.completedLevels.includes(n - 1));
+    if (unlocked) startLevel(n, false);
+    else { showToast('Parabéns! Todas as fases da jornada foram concluídas!', 'success'); goHome(); }
+}
+
+/* ============================================================
+   UTILITÁRIOS DE FEEDBACK E TECLADO
+============================================================ */
+function showFeedback(id, msg, type) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = msg;
+    el.className = `feedback show ${type}`;
+}
+
+function hideFeedback(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'feedback';
+    el.textContent = '';
+}
+
+window.addEventListener('keydown', e => {
+    if (views.fastcalc.classList.contains('active')) {
+        if (e.key >= '0' && e.key <= '9') pressKey(e.key);
+        else if (e.key === '-') pressKey('-');
+        else if (e.key === 'Backspace') pressDelete();
+        else if (e.key === 'Enter') submitFastCalc();
+        else if (e.key === 'Escape') confirmExitPhase();
+    }
+});
+
+/* ============================================================
+   INICIALIZAÇÃO DA APLICAÇÃO
+============================================================ */
+renderHome();
+updateHearts();
+</script>
+
+</body>
+</html>
